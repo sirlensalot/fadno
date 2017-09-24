@@ -30,7 +30,6 @@ import GHC.Generics (Generic)
 import Data.Traversable
 import Data.Function
 import Data.Foldable
-import Test.HUnit
 
 -- | Note = pitch and duration.
 data Note p d = Note { _pitch :: p, _dur :: d }

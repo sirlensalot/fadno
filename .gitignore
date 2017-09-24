@@ -4,3 +4,4 @@ dist
 TAGS
 /.dir-locals.el
 dist-newstyle
+.stack-work
