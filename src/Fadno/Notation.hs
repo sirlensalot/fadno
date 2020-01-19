@@ -17,6 +17,7 @@
 module Fadno.Notation where
 
 import GHC.Generics
+import Data.Semigroup
 import Data.String
 import Data.Default
 import Fadno.Note
@@ -247,6 +248,7 @@ instance Semigroup (Bar n) where
     a <> b = over bNotes (<> view bNotes b) a
 instance Monoid (Bar n) where
     mempty = def
+    mappend = (<>)
 
 -- | Bar smart ctor, used in 'Show'.
 bar :: [n] -> Bar n

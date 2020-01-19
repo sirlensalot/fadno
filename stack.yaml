@@ -4,8 +4,8 @@ packages:
 - '.'
 
 extra-deps:
- - fadno-braids-0.1.2
- - fadno-xml-1.1.2
+ - fadno-braids-0.1.3
+ - fadno-xml-1.1.3
 
 flags: {}
 

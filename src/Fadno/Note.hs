@@ -26,6 +26,7 @@ where
 import Control.Lens
 import Control.Arrow
 import Data.Ratio
+import Data.Semigroup
 import GHC.Generics (Generic)
 import Data.Traversable
 import Data.Function
@@ -79,6 +80,8 @@ instance Num p => Semigroup (Mono p) where
     (M a) <> (M b) = M (a + b)
 instance Num p => Monoid (Mono p) where
     mempty = Rest
+    mappend = (<>)
+
 -- | Mono/Maybe isomorphism.
 maybeMono :: Iso' (Maybe a) (Mono a)
 maybeMono = iso toMono toMaybe
