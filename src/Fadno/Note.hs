@@ -73,11 +73,12 @@ instance (Show p)=>Show (Mono p) where
     show (M p) = "M " ++ show p
 makeLenses ''Mono
 makePrisms ''Mono
+instance Num p => Semigroup (Mono p) where
+    Rest <> b = b
+    a <> Rest = a
+    (M a) <> (M b) = M (a + b)
 instance Num p => Monoid (Mono p) where
     mempty = Rest
-    mappend Rest b = b
-    mappend a Rest = a
-    mappend (M a) (M b) = M (a + b)
 -- | Mono/Maybe isomorphism.
 maybeMono :: Iso' (Maybe a) (Mono a)
 maybeMono = iso toMono toMaybe

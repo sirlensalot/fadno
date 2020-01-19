@@ -3,6 +3,8 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
+
 module Fadno.Meter where
 
 import Fadno.Notation
@@ -42,7 +44,7 @@ rebar :: (HasRatioNotes b n p, HasRatioNotes c m p,Monoid p,Eq p,Monoid (c m),
          TimeSignature -> b n -> [c m]
 rebar ts = reverse . fixup . foldl' go [mempty] . fmap fromNote where
     tslen = tsToRatio ts
-    go [] _ = error "impossible"
+    go bss@[] _ = bss -- error case but might as well be total
     go bss@(b:bs) n | barlen == tslen = go (mempty:bss) n
                     | newBarLen <= tslen = (b |> n):bs
                     | otherwise = {- trace1' "otherwise" (remaining, ndur) $ -} go ((b |> pre):bs) post

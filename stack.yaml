@@ -1,11 +1,11 @@
-resolver: lts-9.5
+resolver: lts-14.20
 
 packages:
 - '.'
 
 extra-deps:
-  - fadno-braids-0.1.0
-  - fadno-xml-1.1.0
+ - fadno-braids-0.1.2
+ - fadno-xml-1.1.2
 
 flags: {}
 

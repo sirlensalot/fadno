@@ -127,7 +127,7 @@ instance HasArticulation Articulation where articulation = adaptHas
 
 -- | Bar rehearsal mark.
 newtype RehearsalMark = RehearsalMark { _rehearsalText :: String }
-    deriving (Eq,Ord,IsString,Generic,Monoid,Default)
+    deriving (Eq,Ord,IsString,Generic,Semigroup,Monoid,Default)
 makeLenses ''RehearsalMark
 instance Show RehearsalMark where show = show . _rehearsalText
 class HasRehearsalMark a where rehearsalMark :: Lens' a (Maybe RehearsalMark)
@@ -135,7 +135,7 @@ instance HasRehearsalMark RehearsalMark where rehearsalMark = adaptHas
 
 -- | Musical direction.
 newtype Direction = Direction { _directionText :: String }
-    deriving (Eq,Ord,IsString,Generic,Monoid,Default)
+    deriving (Eq,Ord,IsString,Generic,Semigroup,Monoid,Default)
 makeLenses ''Direction
 instance Show Direction where show = show . _directionText
 class HasDirection a where direction :: Lens' a (Maybe Direction)
@@ -243,9 +243,10 @@ instance (Show n) => Show (Bar n) where
              ,mshow timeSignature "timeSignature"
              ,mshow clef "clef"
              ]
+instance Semigroup (Bar n) where
+    a <> b = over bNotes (<> view bNotes b) a
 instance Monoid (Bar n) where
     mempty = def
-    a `mappend` b = over bNotes (`mappend` view bNotes b) a
 
 -- | Bar smart ctor, used in 'Show'.
 bar :: [n] -> Bar n
