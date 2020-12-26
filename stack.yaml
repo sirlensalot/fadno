@@ -5,9 +5,7 @@ packages:
 
 extra-deps:
  - fadno-braids-0.1.3
- # - fadno-xml-1.1.3
- - git: https://github.com/slpopejoy/fadno-xml.git
-   commit: cc928bac241e47e36782f8389fbb5acff5ca513e
+ - fadno-xml-1.2
 
 flags: {}
 
