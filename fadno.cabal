@@ -60,6 +60,7 @@ test-suite tests
               , containers
               , HUnit
               , fadno
+              , fadno-xml
               , lens
               , hspec
               , hspec-contrib

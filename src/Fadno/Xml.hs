@@ -18,6 +18,8 @@ module Fadno.Xml
     ,xmlTie
     -- * Rendering
     ,renderFile,renderString,renderElement,Element
+    -- * Internals
+    ,convertDurR,xmlDivisions
     ) where
 
 
@@ -28,7 +30,7 @@ import qualified Fadno.Note as N
 import qualified Fadno.Notation as N
 import Data.List (mapAccumL)
 import Data.Maybe
-import Data.Ratio
+import GHC.Real
 import Control.Arrow
 import Text.XML.Light
 import Data.String
@@ -360,8 +362,9 @@ convertDur ppq dur xdivs = (fromIntegral divs,findValue,dots)
 
 -- | Rational duration (ie, '1 % 4' for quarter note) to xml values.
 convertDurR :: PositiveDivisions -> Rational -> (PositiveDivisions,NoteTypeValue,Int)
-convertDurR xdivs r = (fromIntegral divs,findValue,dots)
+convertDurR xdivs r' = (fromIntegral divs,findValue,dots)
     where
+      r = reduce (numerator r') (denominator r')
       divs :: Int
       divs = floor $ toRational xdivs * (r * 4)
       (num,denom) = numerator &&& denominator $ r
