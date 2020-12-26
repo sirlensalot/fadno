@@ -18,17 +18,19 @@ module Fadno.Xml
     ,xmlTie
     -- * Rendering
     ,renderFile,renderString,renderElement,Element
+    -- * Internals
+    ,convertDurR,xmlDivisions
     ) where
 
 
-import Fadno.MusicXml.MusicXml20
+import Fadno.MusicXml.MusicXml31
 import Fadno.Xml.EmitXml
 import qualified Data.Map.Strict as M
 import qualified Fadno.Note as N
 import qualified Fadno.Notation as N
 import Data.List (mapAccumL)
 import Data.Maybe
-import Data.Ratio
+import GHC.Real
 import Control.Arrow
 import Text.XML.Light
 import Data.String
@@ -214,26 +216,30 @@ xmlTimeSig = maybeMusicData N.timeSignature $ \(N.TimeSignature n q) ->
        MusicDataAttributes $
        (mkAttributes mkEditorial)
         { attributesTime =
-          [mkTime (TimeTime [SeqTime (fromString $ show n)
-                             (fromString $ show $ N.qToInt q)])]}
+          [mkTime (TimeTimeSignature
+                   [ TimeSignature
+                     (fromString $ show n)
+                     (fromString $ show $ N.qToInt q)
+                   ]
+                   Nothing)]}
 
 -- | Measure rehearsal mark.
 xmlRehearsalMark :: (ApplyMonoid t ChxMusicData,N.HasRehearsalMark a) => a -> t ChxMusicData
 xmlRehearsalMark = maybeMusicData N.rehearsalMark
                (makeDirection . DirectionTypeRehearsal . return .
-                mkRehearsal . view N.rehearsalText)
+                mkFormattedTextId . view N.rehearsalText)
 
 -- | Measure direction.
 xmlDirection :: (ApplyMonoid t ChxMusicData,N.HasDirection a) => a -> t ChxMusicData
 xmlDirection = maybeMusicData N.direction
-                   (makeDirection . DirectionTypeWords . return .
-                    mkFormattedText . view N.directionText)
+                   (makeDirection . DirectionTypeDirectionType . return . DirectionTypeWords .
+                    mkFormattedTextId . view N.directionText)
 
 -- | Utility for direction types
 makeDirection :: ChxDirectionType -> ChxMusicData
 makeDirection dt = MusicDataDirection
                         ((mkDirection mkEditorialVoiceDirection)
-                         { directionDirectionType = [DirectionType dt] })
+                         { directionDirectionType = [mkDirectionType dt] })
 
 
 
@@ -246,7 +252,7 @@ makeDirection dt = MusicDataDirection
 -- | render note/rest as xml
 xmlNote :: (N.HasNote a (N.Mono N.PitchRep) Rational) => a -> ChxMusicData
 xmlNote n = MusicDataNote
-            (mkNote (NoteFullNote
+            (mkNote (ChxNoteFullNote
                      (GrpFullNote Nothing
                       (fullNote (view N.notePitch n)))
                      (Duration durDivs) [])
@@ -256,7 +262,7 @@ xmlNote n = MusicDataNote
     where (durDivs,durNoteType,durDots) = convertDurR xmlDivisions $ view N.noteDur n
           nds = replicate durDots mkEmptyPlacement
           fullNote (N.M p) = FullNotePitch (convertPitchRep p)
-          fullNote N.Rest = FullNoteRest mkDisplayStepOctave
+          fullNote N.Rest = FullNoteRest mkRest
 
 -- | render notes as xml chord or rest.
 xmlChord :: (N.HasNote a [N.PitchRep] Rational) =>
@@ -268,7 +274,7 @@ xmlChord ch =
     where doNote p = xmlNote (N.Note p (view N.noteDur ch))
           doChord i | i == 0 = id
                     | otherwise =
-                        set (_musicDataNote._noteNote._noteFullNote2._fullNoteChord)
+                        set (_musicDataNote._noteNote._chxnoteFullNote1._fullNoteChord)
                             (Just Empty)
 
 
@@ -279,11 +285,15 @@ _testNote = over N.nNote (view (bimapping (mapping N.pitchRep) (N.ratioPPQ N.PQ4
 -- > xmlTie testNote <$> xmlChord 128 testNote
 xmlTie :: (N.HasTie a) => a -> ChxMusicData -> ChxMusicData
 xmlTie a = over (_musicDataNote._noteNotations) (++adapt mkTNot) .
-           over (_musicDataNote._noteNote._noteTie1) (++adapt Tie)
+           over (_musicDataNote._noteNote._chxnoteTie) (++adapt' mkTie)
     where adapt fc = maybe [] (fmap fc . conv) $ view N.tie a
-          conv N.TStart = [StartStopStart]
-          conv N.TStop = [StartStopStop]
-          conv N.TBoth = [StartStopStop,StartStopStart]
+          conv N.TStart = [TiedTypeStart]
+          conv N.TStop = [TiedTypeStop]
+          conv N.TBoth = [TiedTypeStop,TiedTypeStart]
+          adapt' fc = maybe [] (fmap fc . conv') $ view N.tie a
+          conv' N.TStart = [StartStopStart]
+          conv' N.TStop = [StartStopStop]
+          conv' N.TBoth = [StartStopStop,StartStopStart]
           mkTNot s = (mkNotations mkEditorial)
                      {notationsNotations = [NotationsTied (mkTied s)]}
 
@@ -352,11 +362,12 @@ convertDur ppq dur xdivs = (fromIntegral divs,findValue,dots)
 
 -- | Rational duration (ie, '1 % 4' for quarter note) to xml values.
 convertDurR :: PositiveDivisions -> Rational -> (PositiveDivisions,NoteTypeValue,Int)
-convertDurR xdivs r = (fromIntegral divs,findValue,dots)
+convertDurR xdivs r' = (fromIntegral divs,findValue,dots)
     where
+      r = reduce (numerator r') (denominator r')
       divs :: Int
       divs = floor $ toRational xdivs * (r * 4)
-      (num,denom) = numerator &&& denominator $ (r / 4)
+      (num,denom) = numerator &&& denominator $ r
       dots = fromMaybe 0 $ M.lookup (fromIntegral num) dotValues
       findValue = fromMaybe NoteTypeValue256th $
                   M.lookup (fromIntegral denom `div` (2 ^ dots)) noteTypeValues

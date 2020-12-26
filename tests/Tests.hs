@@ -4,6 +4,7 @@ import qualified MeterSpec
 import qualified NotationSpec
 import qualified NoteSpec
 import qualified UtilSpec
+import qualified XmlSpec
 import Test.HUnit
 import System.IO
 import Control.Monad
@@ -14,4 +15,5 @@ main = hspec $ fromHUnitTest $ TestList
            [MeterSpec.tests,
             NotationSpec.tests,
             NoteSpec.tests,
-            UtilSpec.tests]
+            UtilSpec.tests,
+            XmlSpec.tests]
