@@ -364,7 +364,7 @@ convertDurR xdivs r = (fromIntegral divs,findValue,dots)
     where
       divs :: Int
       divs = floor $ toRational xdivs * (r * 4)
-      (num,denom) = numerator &&& denominator $ (r / 4)
+      (num,denom) = numerator &&& denominator $ r
       dots = fromMaybe 0 $ M.lookup (fromIntegral num) dotValues
       findValue = fromMaybe NoteTypeValue256th $
                   M.lookup (fromIntegral denom `div` (2 ^ dots)) noteTypeValues
