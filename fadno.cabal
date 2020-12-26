@@ -29,7 +29,7 @@ library
   -- other-extensions:
   build-depends:       Decimal >= 0.4
                      , HUnit >= 1.5
-                     , base >= 4.9 && < 4.13
+                     , base >= 4.9 && < 4.15
                      , containers >= 0.5
                      , comonad >= 5
                      , data-default >= 0.7
