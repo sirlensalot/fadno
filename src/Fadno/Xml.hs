@@ -21,7 +21,7 @@ module Fadno.Xml
     ) where
 
 
-import Fadno.MusicXml.MusicXml20
+import Fadno.MusicXml.MusicXml30
 import Fadno.Xml.EmitXml
 import qualified Data.Map.Strict as M
 import qualified Fadno.Note as N
@@ -214,14 +214,18 @@ xmlTimeSig = maybeMusicData N.timeSignature $ \(N.TimeSignature n q) ->
        MusicDataAttributes $
        (mkAttributes mkEditorial)
         { attributesTime =
-          [mkTime (TimeTime [SeqTime (fromString $ show n)
-                             (fromString $ show $ N.qToInt q)])]}
+          [mkTime (TimeTimeSignature
+                   [ TimeSignature
+                     (fromString $ show n)
+                     (fromString $ show $ N.qToInt q)
+                   ]
+                   Nothing)]}
 
 -- | Measure rehearsal mark.
 xmlRehearsalMark :: (ApplyMonoid t ChxMusicData,N.HasRehearsalMark a) => a -> t ChxMusicData
 xmlRehearsalMark = maybeMusicData N.rehearsalMark
                (makeDirection . DirectionTypeRehearsal . return .
-                mkRehearsal . view N.rehearsalText)
+                mkFormattedText . view N.rehearsalText)
 
 -- | Measure direction.
 xmlDirection :: (ApplyMonoid t ChxMusicData,N.HasDirection a) => a -> t ChxMusicData
@@ -256,7 +260,7 @@ xmlNote n = MusicDataNote
     where (durDivs,durNoteType,durDots) = convertDurR xmlDivisions $ view N.noteDur n
           nds = replicate durDots mkEmptyPlacement
           fullNote (N.M p) = FullNotePitch (convertPitchRep p)
-          fullNote N.Rest = FullNoteRest mkDisplayStepOctave
+          fullNote N.Rest = FullNoteRest mkRest
 
 -- | render notes as xml chord or rest.
 xmlChord :: (N.HasNote a [N.PitchRep] Rational) =>
@@ -279,11 +283,15 @@ _testNote = over N.nNote (view (bimapping (mapping N.pitchRep) (N.ratioPPQ N.PQ4
 -- > xmlTie testNote <$> xmlChord 128 testNote
 xmlTie :: (N.HasTie a) => a -> ChxMusicData -> ChxMusicData
 xmlTie a = over (_musicDataNote._noteNotations) (++adapt mkTNot) .
-           over (_musicDataNote._noteNote._noteTie1) (++adapt Tie)
+           over (_musicDataNote._noteNote._noteTie1) (++adapt' mkTie)
     where adapt fc = maybe [] (fmap fc . conv) $ view N.tie a
-          conv N.TStart = [StartStopStart]
-          conv N.TStop = [StartStopStop]
-          conv N.TBoth = [StartStopStop,StartStopStart]
+          conv N.TStart = [StartStopContinueStart]
+          conv N.TStop = [StartStopContinueStop]
+          conv N.TBoth = [StartStopContinueStop,StartStopContinueStart]
+          adapt' fc = maybe [] (fmap fc . conv') $ view N.tie a
+          conv' N.TStart = [StartStopStart]
+          conv' N.TStop = [StartStopStop]
+          conv' N.TBoth = [StartStopStop,StartStopStart]
           mkTNot s = (mkNotations mkEditorial)
                      {notationsNotations = [NotationsTied (mkTied s)]}
 
