@@ -21,7 +21,7 @@ module Fadno.Xml
     ) where
 
 
-import Fadno.MusicXml.MusicXml30
+import Fadno.MusicXml.MusicXml31
 import Fadno.Xml.EmitXml
 import qualified Data.Map.Strict as M
 import qualified Fadno.Note as N
@@ -225,19 +225,19 @@ xmlTimeSig = maybeMusicData N.timeSignature $ \(N.TimeSignature n q) ->
 xmlRehearsalMark :: (ApplyMonoid t ChxMusicData,N.HasRehearsalMark a) => a -> t ChxMusicData
 xmlRehearsalMark = maybeMusicData N.rehearsalMark
                (makeDirection . DirectionTypeRehearsal . return .
-                mkFormattedText . view N.rehearsalText)
+                mkFormattedTextId . view N.rehearsalText)
 
 -- | Measure direction.
 xmlDirection :: (ApplyMonoid t ChxMusicData,N.HasDirection a) => a -> t ChxMusicData
 xmlDirection = maybeMusicData N.direction
-                   (makeDirection . DirectionTypeWords . return .
-                    mkFormattedText . view N.directionText)
+                   (makeDirection . DirectionTypeDirectionType . return . DirectionTypeWords .
+                    mkFormattedTextId . view N.directionText)
 
 -- | Utility for direction types
 makeDirection :: ChxDirectionType -> ChxMusicData
 makeDirection dt = MusicDataDirection
                         ((mkDirection mkEditorialVoiceDirection)
-                         { directionDirectionType = [DirectionType dt] })
+                         { directionDirectionType = [mkDirectionType dt] })
 
 
 
@@ -250,7 +250,7 @@ makeDirection dt = MusicDataDirection
 -- | render note/rest as xml
 xmlNote :: (N.HasNote a (N.Mono N.PitchRep) Rational) => a -> ChxMusicData
 xmlNote n = MusicDataNote
-            (mkNote (NoteFullNote
+            (mkNote (ChxNoteFullNote
                      (GrpFullNote Nothing
                       (fullNote (view N.notePitch n)))
                      (Duration durDivs) [])
@@ -272,7 +272,7 @@ xmlChord ch =
     where doNote p = xmlNote (N.Note p (view N.noteDur ch))
           doChord i | i == 0 = id
                     | otherwise =
-                        set (_musicDataNote._noteNote._noteFullNote2._fullNoteChord)
+                        set (_musicDataNote._noteNote._chxnoteFullNote1._fullNoteChord)
                             (Just Empty)
 
 
@@ -283,11 +283,11 @@ _testNote = over N.nNote (view (bimapping (mapping N.pitchRep) (N.ratioPPQ N.PQ4
 -- > xmlTie testNote <$> xmlChord 128 testNote
 xmlTie :: (N.HasTie a) => a -> ChxMusicData -> ChxMusicData
 xmlTie a = over (_musicDataNote._noteNotations) (++adapt mkTNot) .
-           over (_musicDataNote._noteNote._noteTie1) (++adapt' mkTie)
+           over (_musicDataNote._noteNote._chxnoteTie) (++adapt' mkTie)
     where adapt fc = maybe [] (fmap fc . conv) $ view N.tie a
-          conv N.TStart = [StartStopContinueStart]
-          conv N.TStop = [StartStopContinueStop]
-          conv N.TBoth = [StartStopContinueStop,StartStopContinueStart]
+          conv N.TStart = [TiedTypeStart]
+          conv N.TStop = [TiedTypeStop]
+          conv N.TBoth = [TiedTypeStop,TiedTypeStart]
           adapt' fc = maybe [] (fmap fc . conv') $ view N.tie a
           conv' N.TStart = [StartStopStart]
           conv' N.TStop = [StartStopStop]
