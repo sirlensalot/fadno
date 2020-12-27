@@ -12,7 +12,7 @@ module Fadno.Xml
     ,xmlAppendMeasureData,xmlAppendMeasureDatas
     ,xmlClef,xmlClef'
     ,xmlRepeats,xmlRepeats'
-    ,xmlBarline,xmlTimeSig,xmlRehearsalMark,xmlDirection
+    ,xmlBarline,xmlBarline',xmlTimeSig,xmlRehearsalMark,xmlDirection
     -- * Notes
     ,xmlNote,xmlChord
     ,xmlTie
