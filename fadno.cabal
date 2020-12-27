@@ -1,7 +1,7 @@
 name:                fadno
 category:            Music
 synopsis:            Minimal library for music generation and notation
-version:             1.1.5
+version:             1.1.6
 homepage:            http://github.com/slpopejoy/fadno
 description:         Provides the Note type and HasNote class with polymorphic pitch and duration representations,
                      metering, barring and time signature utilities, plus midi and MusicXML support.
@@ -29,13 +29,13 @@ library
   -- other-extensions:
   build-depends:       Decimal >= 0.4
                      , HUnit >= 1.5
-                     , base >= 4.9 && < 4.15
+                     , base >= 4.9 && < 4.14
                      , containers >= 0.5
                      , comonad >= 5
                      , data-default >= 0.7
                      , deepseq >= 1.4
                      , event-list >= 0.1
-                     , fadno-braids >= 0.1
+                     , fadno-braids >= 0.1.5
                      , fadno-xml >= 1.2
                      , lens >= 4.15
                      , midi >= 0.2
