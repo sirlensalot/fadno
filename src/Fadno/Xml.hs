@@ -166,12 +166,21 @@ xmlClef' c =
 
 -- | Measure barlines.
 xmlBarline :: (ApplyMonoid c ChxMusicData) => N.HasBarline a => a -> c ChxMusicData
-xmlBarline = maybeMusicData N.barline $ \b ->
-      case b of
-        N.Double -> mdBarline RightLeftMiddleLeft
-                    BarStyleLightLight Nothing
-        N.Final -> mdBarline RightLeftMiddleRight
-                   BarStyleLightHeavy Nothing
+xmlBarline = xmlBarline' False
+
+
+-- | Measure barlines; flag determines if double bars are rendered to left (False)
+-- or right (True).
+xmlBarline' :: (ApplyMonoid c ChxMusicData) => Bool -> N.HasBarline a => a -> c ChxMusicData
+xmlBarline' renderDoubleLeft = maybeMusicData N.barline $ \b ->
+  case b of
+    N.Double -> mdBarline doublePos
+                BarStyleLightLight Nothing
+    N.Final -> mdBarline RightLeftMiddleRight
+               BarStyleLightHeavy Nothing
+  where
+    doublePos | renderDoubleLeft = RightLeftMiddleLeft
+              | otherwise = RightLeftMiddleRight
 
 -- | Measure repeats for a single measure.
 xmlRepeats :: (ApplyMonoid t ChxMusicData) => N.HasRepeats a => a -> t ChxMusicData
