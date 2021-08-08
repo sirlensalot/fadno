@@ -174,6 +174,21 @@ makeLenses ''Clef
 class HasClef a where clef :: Lens' a (Maybe Clef)
 instance HasClef Clef where clef = adaptHas
 
+-- | Adapts musicxml Beams where beams are labeled "1" for eighth beam etc,
+-- where instead it is a list implying the first element is eighth etc.
+data Beam
+    = BeamBegin
+    | BeamContinue
+    | BeamEnd
+    | BeamForwardHook
+    | BeamBackwardHook
+    deriving (Eq,Bounded,Enum,Ord,Show)
+class HasBeams a where beams :: Lens' a [Beam]
+instance HasBeams [Beam] where beams = ($)
+
+class HasVoice a where voice :: Lens' a (Maybe String)
+
+
 
 -- | Part identifier, prefers 'Num' or 'IsString' values.
 newtype Part a = Part { _partIdx :: a }
@@ -198,6 +213,8 @@ data Note' p d = Note' {
     , _nTie :: Maybe Tie
     , _nSlur :: Maybe Slur
     , _nArticulation :: Maybe Articulation
+    , _nBeams :: [Beam]
+    , _nVoice :: Maybe String
     } deriving (Eq,Generic)
 
 makeLenses ''Note'
@@ -207,17 +224,23 @@ instance HasNote (Note' p d) p d where
 instance HasTie (Note' p d) where tie = nTie
 instance HasSlur (Note' p d) where slur = nSlur
 instance HasArticulation (Note' p d) where articulation = nArticulation
+instance HasBeams (Note' p d) where beams = nBeams
+instance HasVoice (Note' p d) where voice = nVoice
 instance (Show p, Show d) => Show (Note' p d) where
     show n = mshows n ("note' (" ++ show (view nNote n) ++ ")")
              [mshow tie "tie"
              ,mshow slur "slur"
              ,mshow articulation "articulation"
+             ,const $ case view beams n of
+                 [] -> ""
+                 bs -> " & beams .= " ++ show bs
+             ,mshow voice "voice"
              ]
 
 
 -- | Note smart ctor, used in 'Show'.
 note' :: Note p d -> Note' p d
-note' n = Note' n Nothing Nothing Nothing
+note' n = Note' n Nothing Nothing Nothing [] Nothing
 
 testNote :: Note' [Int] Int
 testNote = note' ([60]|:2) & tie ?~ TStart & articulation ?~ Accent

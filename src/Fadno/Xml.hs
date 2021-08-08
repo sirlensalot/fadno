@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -15,7 +16,7 @@ module Fadno.Xml
     ,xmlBarline,xmlBarline',xmlTimeSig,xmlRehearsalMark,xmlDirection
     -- * Notes
     ,xmlNote,xmlChord,xmlArticulation
-    ,xmlTie
+    ,xmlTie,xmlBeams,xmlVoice
     -- * Rendering
     ,renderFile,renderString,renderElement,Element
     -- * Internals
@@ -50,6 +51,7 @@ makeClassy_ ''ScoreHeader
 makeClassy_ ''Identification
 makeClassy_ ''PartList
 makeClassy_ ''CmpPart
+makeClassy_ ''EditorialVoice
 
 
 
@@ -247,7 +249,8 @@ xmlDirection = maybeMusicData N.direction
 makeDirection :: ChxDirectionType -> ChxMusicData
 makeDirection dt = MusicDataDirection
                         ((mkDirection mkEditorialVoiceDirection)
-                         { directionDirectionType = [mkDirectionType dt] })
+                         { directionDirectionType = [mkDirectionType dt]
+                         , directionPlacement = Just AboveBelowAbove })
 
 
 
@@ -337,6 +340,24 @@ xmlArticulation a = addNotations $ case view N.articulation a of
                N.SoftAccent -> ArticulationsSoftAccent mkEmptyPlacement
                N.OtherArticulation s -> ArticulationsOtherArticulation (mkOtherPlacementText s)
            ] } ) ] }
+
+-- | Add beams, numbering from first beam in list, to note.
+xmlBeams :: N.HasBeams a => a -> ChxMusicData -> ChxMusicData
+xmlBeams a = over (_musicDataNote._noteBeam) (++ zipWith bs (view N.beams a) [1..])
+  where
+    bs b i = (mkBeam (toX b)) { beamNumber = Just i }
+    toX = \case
+        N.BeamBegin -> BeamValueBegin
+        N.BeamContinue -> BeamValueContinue
+        N.BeamEnd -> BeamValueEnd
+        N.BeamForwardHook -> BeamValueForwardHook
+        N.BeamBackwardHook -> BeamValueBackwardHook
+
+xmlVoice :: N.HasVoice a => a -> ChxMusicData -> ChxMusicData
+xmlVoice a = case view N.voice a of
+  Nothing -> id
+  Just v -> set ( _musicDataNote . _noteEditorialVoice . _editorialVoiceVoice)
+            (Just (Voice (show v)))
 
 -- | Steps and enharmonics.
 _steps :: [(Step,Maybe Semitones)]
