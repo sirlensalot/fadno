@@ -1,9 +1,6 @@
 {-# LANGUAGE RankNTypes #-}
 module Fadno.Util where
 
-import Control.Applicative
-import Control.Monad (replicateM)
-import Test.HUnit
 import Data.List
 import Data.Function (on)
 import qualified Debug.Trace as T
@@ -101,7 +98,6 @@ pitchClassSet gamut line = let
     alts = nub $ map (\x -> normalize . sort $ map (modg . (x+)) norm) [0..(gamut-1)]
     -- compute "values" as distance from head, reversed
     vals = map (\x -> reverse $ map (flip (-) (head x)) x) alts
-    min = minimum vals
     in fst . minimumBy (compare `on` snd) $ zip alts vals
 
 

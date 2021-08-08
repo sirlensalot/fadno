@@ -14,7 +14,7 @@ module Fadno.Xml
     ,xmlRepeats,xmlRepeats'
     ,xmlBarline,xmlBarline',xmlTimeSig,xmlRehearsalMark,xmlDirection
     -- * Notes
-    ,xmlNote,xmlChord
+    ,xmlNote,xmlChord,xmlArticulation
     ,xmlTie
     -- * Rendering
     ,renderFile,renderString,renderElement,Element
@@ -36,7 +36,6 @@ import Text.XML.Light
 import Data.String
 import Control.Lens hiding (Empty)
 import Data.Foldable
-import Data.Monoid
 
 
 makeClassy_ ''ChxMusicData
@@ -290,10 +289,13 @@ xmlChord ch =
 _testNote :: N.Note' [N.PitchRep] Rational
 _testNote = over N.nNote (view (bimapping (mapping N.pitchRep) (N.ratioPPQ N.PQ4))) N.testNote
 
+addNotations :: [Notations] -> ChxMusicData -> ChxMusicData
+addNotations ns = over (_musicDataNote._noteNotations) (++ ns)
+
 -- | Adapt a rendered note to account for tie information.
 -- > xmlTie testNote <$> xmlChord 128 testNote
 xmlTie :: (N.HasTie a) => a -> ChxMusicData -> ChxMusicData
-xmlTie a = over (_musicDataNote._noteNotations) (++adapt mkTNot) .
+xmlTie a = addNotations (adapt mkTNot) .
            over (_musicDataNote._noteNote._chxnoteTie) (++adapt' mkTie)
     where adapt fc = maybe [] (fmap fc . conv) $ view N.tie a
           conv N.TStart = [TiedTypeStart]
@@ -306,9 +308,39 @@ xmlTie a = over (_musicDataNote._noteNotations) (++adapt mkTNot) .
           mkTNot s = (mkNotations mkEditorial)
                      {notationsNotations = [NotationsTied (mkTied s)]}
 
+
+-- | Add articulation to note.
+xmlArticulation :: N.HasArticulation a => a -> ChxMusicData -> ChxMusicData
+xmlArticulation a = addNotations $ case view N.articulation a of
+  Nothing -> []
+  Just a' -> pure $ (mkNotations mkEditorial)
+    { notationsNotations =
+      [ NotationsArticulations
+        (mkArticulations
+         { articulationsArticulations =
+           [ case a' of
+               N.Accent -> ArticulationsAccent mkEmptyPlacement
+               N.Staccato -> ArticulationsStaccato mkEmptyPlacement
+               -- N.StrongAccent -> ArticulationsStrongAccent TODO implement after fixing fadno-xml #7
+               N.Tenuto -> ArticulationsTenuto mkEmptyPlacement
+               N.DetachedLegato -> ArticulationsDetachedLegato mkEmptyPlacement
+               N.Staccatissimo -> ArticulationsStaccatissimo mkEmptyPlacement
+               N.Spiccato -> ArticulationsSpiccato mkEmptyPlacement
+               N.Scoop -> ArticulationsScoop mkEmptyLine
+               N.Plop -> ArticulationsPlop mkEmptyLine
+               N.Doit -> ArticulationsDoit mkEmptyLine
+               N.Falloff -> ArticulationsFalloff mkEmptyLine
+               N.BreathMark -> ArticulationsBreathMark (mkBreathMark BreathMarkValue)
+               N.Caesura -> ArticulationsCaesura (mkCaesura CaesuraValueNormal)
+               N.Stress -> ArticulationsStress mkEmptyPlacement
+               N.Unstress -> ArticulationsUnstress mkEmptyPlacement
+               N.SoftAccent -> ArticulationsSoftAccent mkEmptyPlacement
+               N.OtherArticulation s -> ArticulationsOtherArticulation (mkOtherPlacementText s)
+           ] } ) ] }
+
 -- | Steps and enharmonics.
-steps :: [(Step,Maybe Semitones)]
-steps = [(StepC,Nothing),
+_steps :: [(Step,Maybe Semitones)]
+_steps = [(StepC,Nothing),
          (StepC,sharp),
          (StepD,Nothing),
          (StepE,flat),
@@ -329,10 +361,10 @@ noteTypeValues = M.fromList $ snd $ mapAccumL acc (256*4) [minBound .. maxBound]
     where acc v nt = (v `div` 2,(v,nt))
 
 -- | Int pitch to xml. TODO C3 vs C4?
-convertPitch :: Int -> Pitch
-convertPitch i = Pitch step semi oct where
+_convertPitch :: Int -> Pitch
+_convertPitch i = Pitch step semi oct where
     oct = fromIntegral $ (i `div` 12) - 1
-    (step, semi) = steps !! (i `mod` 12)
+    (step, semi) = _steps !! (i `mod` 12)
 
 convertPitchRep :: N.PitchRep -> Pitch
 convertPitchRep (N.PitchRep s o) = Pitch step semi (fromIntegral o)
@@ -359,8 +391,8 @@ convertPitchRep (N.PitchRep s o) = Pitch step semi (fromIntegral o)
 
 
 -- | Int duration/PPQ to xml values.
-convertDur :: N.PPQ -> Int -> PositiveDivisions -> (PositiveDivisions,NoteTypeValue,Int)
-convertDur ppq dur xdivs = (fromIntegral divs,findValue,dots)
+_convertDur :: N.PPQ -> Int -> PositiveDivisions -> (PositiveDivisions,NoteTypeValue,Int)
+_convertDur ppq dur xdivs = (fromIntegral divs,findValue,dots)
     where
       ppqd = N.ppqDiv ppq
       divs = floor xdivs * dur `div` ppqd

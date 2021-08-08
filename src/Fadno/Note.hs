@@ -26,7 +26,6 @@ where
 import Control.Lens
 import Control.Arrow
 import Data.Ratio
-import Data.Semigroup
 import GHC.Generics (Generic)
 import Data.Traversable
 import Data.Function
@@ -192,7 +191,7 @@ instance Enum PitchRep where
     fromEnum = fromIntegral . toInteger
 
 instance Ord PitchRep where
-    a <= b = fromIntegral a <= fromIntegral b
+    a <= b = (fromIntegral a :: Integer) <= fromIntegral b
 
 instance Real PitchRep where
     toRational (PitchRep s o) = (((fromIntegral o + 1) * 12) + toChroma s) % 1

@@ -17,7 +17,6 @@
 module Fadno.Notation where
 
 import GHC.Generics
-import Data.Semigroup
 import Data.String
 import Data.Default
 import Fadno.Note
@@ -26,7 +25,6 @@ import Data.Typeable
 import Data.Ratio
 import Data.Sequence (Seq,fromList)
 import Data.Foldable
-import Test.HUnit
 import Data.List
 import Data.Maybe
 
@@ -84,9 +82,9 @@ tsFromRatio' (TimeSignature _ src) = fmap adjust . tsFromRatio where
 
 
 -- | Duration iso, from Integral to Rational, given PPQ
-ratioPPQ :: Integral a => PPQ -> Iso' a Rational
+ratioPPQ :: forall a . Integral a => PPQ -> Iso' a Rational
 ratioPPQ p = iso toRat toInt where
-    ppq4 = ppqDiv p * 4
+    ppq4 = ppqDiv p * (4 :: a)
     toRat i = fromIntegral i % fromIntegral ppq4
     toInt r = truncate (r * toRational ppq4)
 
@@ -120,8 +118,25 @@ class HasSlur a where slur :: Lens' a (Maybe Slur)
 instance HasSlur Slur where slur = adaptHas
 
 -- | Note articulations.
-data Articulation = Staccato | Accent
-    deriving (Eq,Show,Bounded,Enum,Ord)
+data Articulation
+    = Staccato
+    | Accent
+    -- | StrongAccent TODO implement after fixing fadno-xml #7
+    | Tenuto
+    | DetachedLegato
+    | Staccatissimo
+    | Spiccato
+    | Scoop
+    | Plop
+    | Doit
+    | Falloff
+    | BreathMark
+    | Caesura
+    | Stress
+    | Unstress
+    | SoftAccent
+    | OtherArticulation String
+    deriving (Eq,Show,Ord)
 class HasArticulation a where articulation :: Lens' a (Maybe Articulation)
 instance HasArticulation Articulation where articulation = adaptHas
 

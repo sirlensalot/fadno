@@ -23,7 +23,6 @@ import Control.Lens
 import Control.Arrow
 import System.Process
 import Control.Monad
-import Data.Ratio
 
 -- | Serializable midi data.
 type MidiData = MFile.T
@@ -120,7 +119,7 @@ fromInstrument = fromIntegral . fromEnum
 makeTrack :: [MidiEvent] -> MidiTrack
 makeTrack = fromPairList . concat . snd . mapAccumL conv 0
     where conv :: IDur -> MidiEvent -> (IDur,[(ElapsedTime,MEvent.T)])
-          conv _ (Pad dur) = (dur,[])
+          conv _ (Pad dur') = (dur',[])
           conv off (Event e) = (0,[(toElapsedTime $ fromIntegral off,e)])
 
 
@@ -153,7 +152,7 @@ programChange chan prog = voiceEvent chan (ProgramChange (toProgram $ fromIntegr
 
 -- | note on + note off events, using 'Pad' to carve out space.
 noteEvents :: MidiChan -> MidiVelocity -> ([IPitch],IDur) -> [MidiEvent]
-noteEvents chan vel (ps,dur) = evs noteOn ++ [Pad dur] ++ evs noteOff
+noteEvents chan vel (ps,dur') = evs noteOn ++ [Pad dur'] ++ evs noteOff
     where evs f = map (f chan vel . fromIntegral) ps
 
 -- TODO: figure out polymorphic way to attach velocity and anything else to notes.
@@ -161,8 +160,8 @@ noteEvents chan vel (ps,dur) = evs noteOn ++ [Pad dur] ++ evs noteOff
 -- | note on or note off event.
 noteEvent :: (Pitch -> Velocity -> MVoice.T) ->
              MidiChan -> MidiVelocity -> IPitch -> MidiEvent
-noteEvent f chan vel pitch = voiceEvent chan
-                             (f (toPitch (fromIntegral pitch))
+noteEvent f chan vel pitch' = voiceEvent chan
+                             (f (toPitch (fromIntegral pitch'))
                                     (toVelocity $ fromIntegral vel))
 noteOn :: MidiChan -> MidiVelocity -> IPitch -> MidiEvent
 noteOn = noteEvent NoteOn

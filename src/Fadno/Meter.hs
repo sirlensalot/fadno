@@ -11,7 +11,6 @@ import Fadno.Notation
 import Fadno.Note
 import Control.Lens hiding (Empty,pre)
 import Data.Foldable
-import Test.HUnit
 import Data.Ratio
 import GHC.Real
 import Data.Maybe
@@ -20,7 +19,6 @@ import Data.Function
 import Control.Arrow
 import qualified Data.Map.Strict as M
 import Safe
-import Fadno.Util
 
 type HasRatioNotes t n p = (Traversable t, HasNote n p Rational)
 
