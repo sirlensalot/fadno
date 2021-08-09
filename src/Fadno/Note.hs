@@ -122,7 +122,7 @@ isRest = (mempty ==) . view notePitch
 
 
 -- | Chroma as enharmonic names.
-data Spelling = C|Cs|Db|D|Ds|Eb|E|F|Fs|Gb|G|Gs|Ab|A|As|Bb|B
+data Spelling = C|Cs|Db|D|Ds|Eb|E|Fb|Es|F|Fs|Gb|G|Gs|Ab|A|As|Bb|B|Cb|Bs
             deriving (Eq,Show,Read,Enum,Ord,Bounded,Generic)
 
 -- | Convert to 'Spelling' with 0==C, using 'Cs','Eb','Fs','Gs','Bb' enharmonics.
@@ -151,6 +151,8 @@ toChroma D = 2
 toChroma Ds = 3
 toChroma Eb = 3
 toChroma E = 4
+toChroma Fb = 4
+toChroma Es = 5
 toChroma F = 5
 toChroma Fs = 6
 toChroma Gb = 6
@@ -161,6 +163,8 @@ toChroma A = 9
 toChroma As = 10
 toChroma Bb = 10
 toChroma B = 11
+toChroma Cb = 11
+toChroma Bs = 0
 
 -- | 'Spelling'-to-chroma degenerate 'Iso'.
 spelling :: Integral a => Iso' a Spelling

@@ -12,6 +12,7 @@ module Fadno.Xml
     ,xmlPrependMeasureData,xmlPrependMeasureDatas
     ,xmlAppendMeasureData,xmlAppendMeasureDatas
     ,xmlClef,xmlClef'
+    ,xmlKeySignature,toFifths
     ,xmlRepeats,xmlRepeats'
     ,xmlBarline,xmlBarline',xmlTimeSig,xmlRehearsalMark,xmlDirection
     -- * Notes
@@ -163,6 +164,36 @@ xmlClef' c =
               ((mkAttributes mkEditorial)
                { attributesClef = [(mkClef cs)
                                    { clefLine = Just cl }]})
+
+xmlKeySignature :: N.Spelling -> ChxMusicData
+xmlKeySignature sp = MusicDataAttributes
+    ((mkAttributes mkEditorial)
+     { attributesKey =
+       [ mkKey $ KeyTraditionalKey $ mkTraditionalKey (toFifths sp) ] } )
+
+toFifths :: N.Spelling -> Fifths
+toFifths = \case
+  N.C -> 0
+  N.G -> 1
+  N.D -> 2
+  N.A -> 3
+  N.E -> 4
+  N.B -> 5
+  N.Fs -> 6
+  N.Cs -> 7
+  N.Gs -> 8  -- totality only
+  N.Ds -> 9  -- totality only
+  N.As -> 10 -- totality only
+  N.Es -> 11 -- totality only
+  N.Bs -> 12 -- totality only
+  N.Fb -> -8 -- totality only
+  N.Cb -> -7
+  N.Gb -> -6
+  N.Db -> -5
+  N.Ab -> -4
+  N.Eb -> -3
+  N.Bb -> -2
+  N.F -> -1
 
 
 -- | Measure barlines.
