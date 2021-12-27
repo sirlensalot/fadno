@@ -208,26 +208,29 @@ mshows s pre = (pre ++) . concatMap ($ s)
 -- Example types.
 
 -- | Note with notations.
-data Note' p d = Note' {
-      _nNote :: Note p d
+
+type Note' p d = Noted (Note p d)
+
+data Noted n = Noted {
+      _nNote :: n
     , _nTie :: Maybe Tie
     , _nSlur :: Maybe Slur
     , _nArticulation :: Maybe Articulation
     , _nBeams :: [Beam]
     , _nVoice :: Maybe String
-    } deriving (Eq,Generic)
+    } deriving (Eq,Generic,Functor,Foldable,Traversable)
 
-makeLenses ''Note'
+makeLenses ''Noted
 instance HasNote (Note' p d) p d where
     note = nNote
     fromNote = note' . view note
-instance HasTie (Note' p d) where tie = nTie
-instance HasSlur (Note' p d) where slur = nSlur
-instance HasArticulation (Note' p d) where articulation = nArticulation
-instance HasBeams (Note' p d) where beams = nBeams
-instance HasVoice (Note' p d) where voice = nVoice
-instance (Show p, Show d) => Show (Note' p d) where
-    show n = mshows n ("note' (" ++ show (view nNote n) ++ ")")
+instance HasTie (Noted n) where tie = nTie
+instance HasSlur (Noted n) where slur = nSlur
+instance HasArticulation (Noted n) where articulation = nArticulation
+instance HasBeams (Noted n) where beams = nBeams
+instance HasVoice (Noted n) where voice = nVoice
+instance (Show n) => Show (Noted n) where
+    show n = mshows n (show (view nNote n))
              [mshow tie "tie"
              ,mshow slur "slur"
              ,mshow articulation "articulation"
@@ -240,7 +243,10 @@ instance (Show p, Show d) => Show (Note' p d) where
 
 -- | Note smart ctor, used in 'Show'.
 note' :: Note p d -> Note' p d
-note' n = Note' n Nothing Nothing Nothing [] Nothing
+note' = noted
+
+noted :: n -> Noted n
+noted n = Noted n Nothing Nothing Nothing [] Nothing
 
 testNote :: Note' [Int] Int
 testNote = note' ([60]|:2) & tie ?~ TStart & articulation ?~ Accent

@@ -430,6 +430,8 @@ convertPitchRep (N.PitchRep s o) = Pitch step semi (fromIntegral o)
           ss N.Ds = (StepD,sharp)
           ss N.Eb = (StepE,flat)
           ss N.E = (StepE,Nothing)
+          ss N.Fb = (StepE,Nothing)
+          ss N.Es = (StepF,Nothing)
           ss N.F = (StepF,Nothing)
           ss N.Fs = (StepF,sharp)
           ss N.Gb = (StepG,flat)
@@ -440,6 +442,8 @@ convertPitchRep (N.PitchRep s o) = Pitch step semi (fromIntegral o)
           ss N.As = (StepA,sharp)
           ss N.Bb = (StepB,flat)
           ss N.B = (StepB,Nothing)
+          ss N.Cb = (StepB,Nothing)
+          ss N.Bs = (StepC,Nothing)
 
 
 -- | Int duration/PPQ to xml values.
