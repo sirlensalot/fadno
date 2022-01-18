@@ -17,7 +17,7 @@ module Fadno.Xml
     ,xmlBarline,xmlBarline',xmlTimeSig,xmlRehearsalMark,xmlDirection
     -- * Notes
     ,xmlNote,xmlChord,xmlArticulation
-    ,xmlTie,xmlBeams,xmlVoice
+    ,xmlTie,xmlBeams,xmlVoice,xmlSlur
     -- * Rendering
     ,renderFile,renderString,renderElement,Element
     -- * Internals
@@ -371,6 +371,15 @@ xmlArticulation a = addNotations $ case view N.articulation a of
                N.SoftAccent -> ArticulationsSoftAccent mkEmptyPlacement
                N.OtherArticulation s -> ArticulationsOtherArticulation (mkOtherPlacementText s)
            ] } ) ] }
+
+xmlSlur :: N.HasSlur a => a -> ChxMusicData -> ChxMusicData
+xmlSlur a = addNotations $ case view N.slur a of
+  Nothing -> []
+  Just a' -> pure $ (mkNotations mkEditorial)
+    { notationsNotations =
+      [ NotationsSlur (mkSlur $ case a' of
+                          N.SStart -> StartStopContinueStart
+                          N.SStop -> StartStopContinueStop) ] }
 
 -- | Add beams, numbering from first beam in list, to note.
 xmlBeams :: N.HasBeams a => a -> ChxMusicData -> ChxMusicData
