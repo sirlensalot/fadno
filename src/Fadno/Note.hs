@@ -33,7 +33,7 @@ import Data.Foldable
 
 -- | Note = pitch and duration.
 data Note p d = Note { _pitch :: p, _dur :: d }
-                deriving (Eq,Generic)
+                deriving (Eq,Generic,Functor)
 $(makeLenses ''Note)
 
 instance (Show p, Show d) => Show (Note p d) where
