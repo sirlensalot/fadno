@@ -14,6 +14,7 @@ module Fadno.Xml
     ,xmlClef,xmlClef'
     ,xmlKeySignature,toFifths
     ,xmlRepeats,xmlRepeats'
+    ,BarlinePos(..)
     ,xmlBarline,xmlBarline',xmlTimeSig,xmlRehearsalMark,xmlDirection
     -- * Notes
     ,xmlNote,xmlChord,xmlArticulation
@@ -195,24 +196,21 @@ toFifths = \case
   N.Bb -> -2
   N.F -> -1
 
+data BarlinePos = BarlineLeft | BarlineRight deriving (Eq,Show,Enum)
 
--- | Measure barlines.
+-- | Measure barline on right.
 xmlBarline :: (ApplyMonoid c ChxMusicData) => N.HasBarline a => a -> c ChxMusicData
-xmlBarline = xmlBarline' False
+xmlBarline = xmlBarline' BarlineRight
 
 
--- | Measure barlines; flag determines if double bars are rendered to left (False)
--- or right (True).
-xmlBarline' :: (ApplyMonoid c ChxMusicData) => Bool -> N.HasBarline a => a -> c ChxMusicData
-xmlBarline' renderDoubleLeft = maybeMusicData N.barline $ \b ->
+-- | Measure barlines; double bar can be right or left, final always right.
+xmlBarline' :: (ApplyMonoid c ChxMusicData) => BarlinePos -> N.HasBarline a => a -> c ChxMusicData
+xmlBarline' pos = maybeMusicData N.barline $ \b ->
   case b of
-    N.Double -> mdBarline doublePos
+    N.Double -> mdBarline pos
                 BarStyleLightLight Nothing
-    N.Final -> mdBarline RightLeftMiddleRight
+    N.Final -> mdBarline BarlineRight
                BarStyleLightHeavy Nothing
-  where
-    doublePos | renderDoubleLeft = RightLeftMiddleLeft
-              | otherwise = RightLeftMiddleRight
 
 -- | Measure repeats for a single measure.
 xmlRepeats :: (ApplyMonoid t ChxMusicData) => N.HasRepeats a => a -> t ChxMusicData
@@ -224,10 +222,10 @@ xmlRepeats = maybeMusicDatas N.repeats $ \r ->
     where
 
 startRepeat :: ChxMusicData
-startRepeat = mdBarline RightLeftMiddleLeft
+startRepeat = mdBarline BarlineLeft
               BarStyleHeavyLight (Just BackwardForwardForward)
 endRepeat :: ChxMusicData
-endRepeat = mdBarline RightLeftMiddleRight
+endRepeat = mdBarline BarlineRight
             BarStyleLightHeavy (Just BackwardForwardBackward)
 
 -- | Measure repeats bracketing existing measures.
@@ -242,14 +240,17 @@ xmlRepeats' s measures =
           doEnd = xmlAppendMeasureData endRepeat
 
 -- | utility
-mdBarline :: RightLeftMiddle -> BarStyle ->
+mdBarline :: BarlinePos -> BarStyle ->
              Maybe BackwardForward -> ChxMusicData
-mdBarline rml bs bf =
+mdBarline bp bs bf =
     MusicDataBarline
     ((mkBarline mkEditorial)
      { barlineLocation = Just rml
      , barlineBarStyle = Just (mkBarStyleColor bs)
      , barlineRepeat = fmap mkRepeat bf })
+  where
+    rml | bp == BarlineLeft = RightLeftMiddleLeft
+        | otherwise = RightLeftMiddleRight
 
 -- | Measure time signature.
 xmlTimeSig :: (ApplyMonoid t ChxMusicData, N.HasTimeSignature a) => a -> t ChxMusicData

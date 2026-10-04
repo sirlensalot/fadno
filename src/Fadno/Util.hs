@@ -20,7 +20,7 @@ zipTail :: (a -> a -> c) -> [a] -> [c]
 zipTail f = zipWith f <*> tail
 
 -- opposite of diff, compute concrete notes from intervals
-integ :: Int -> [Int] -> [Int]
+integ :: Num a => a -> [a] -> [a]
 integ = scanl (+)
 
 -- | 'Debug.Trace.trace' with brackets.
@@ -91,12 +91,12 @@ normalize l = map (flip (-) $ minimum l) l
 -- PC rules state you must rotate the scale through the gamut,
 -- and selecting for the least distance from tail -> head, tail-1 -> head, etc.
 -- Line can be any melody, gets normalized to gamut.
-pitchClassSet :: Int -> [Int] -> [Int]
+pitchClassSet :: (Integral g, Integral p) => g -> [p] -> [p]
 pitchClassSet gamut line = let
-    modg = flip mod gamut
+    modg = flip mod (fromIntegral gamut)
     norm = normalize . sort . nub . map modg $ line
     -- rotate through gamut
-    alts = nub $ map (\x -> normalize . sort $ map (modg . (x+)) norm) [0..(gamut-1)]
+    alts = nub $ map (\x -> normalize . sort $ map (modg . (x+)) norm) [0..(fromIntegral gamut-1)]
     -- compute "values" as distance from head, reversed
     vals = map (\x -> reverse $ map (flip (-) (head x)) x) alts
     in fst . minimumBy (compare `on` snd) $ zip alts vals
@@ -127,7 +127,8 @@ rotations l = flip rotate l <$> [1..(length l)]
 allTuples :: Int -> [a] -> [[a]]
 allTuples = replicateM
 
-monotonic :: [Int] -> Bool
+-- | Sequence moves up or down, not both, allows flat.
+monotonic :: Integral i => [i] -> Bool
 monotonic = (2 >) . length . nub . filter (EQ /=) . zipTail compare
 
 interleave :: [[a]] -> [a]
